@@ -4,7 +4,8 @@ Checkout and delivery address flow handlers
 from telebot import types
 from bot.utils.session import (
     update_session_activity, get_user_state, 
-    set_user_state, clear_user_state, clear_cart_message
+    set_user_state, clear_user_state, clear_cart_message,
+    get_checkout_message, set_checkout_message, get_order_message
 )
 from bot.services.cart_service import get_cart, clear_cart, get_cart_total
 from bot.services.order_service import create_order
@@ -25,7 +26,7 @@ def register_checkout_handlers(bot, config):
         
         cart = get_cart(user_id)
         if not cart:
-            bot.answer_callback_query(call.id, "Your cart is empty!")
+            bot.answer_callback_query(call.id, "Your cart is empty")
             return
         
         clear_cart_message(user_id)
@@ -34,93 +35,145 @@ def register_checkout_handlers(bot, config):
         checkout_data[user_id] = {}
         
         set_user_state(user_id, 'awaiting_name')
-        bot.send_message(
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton("📦 Continue Shopping", callback_data="continue_shopping"))
+        
+        sent_msg = bot.send_message(
             call.message.chat.id,
-            "Let's complete your order! 📝\n\nPlease enter a name for delivery:"
+            "Enter a name for delivery:",
+            reply_markup=markup
         )
+        
+        set_checkout_message(user_id, sent_msg.message_id)
+    
+    @bot.callback_query_handler(func=lambda call: call.data == 'continue_shopping')
+    def handle_continue_shopping(call):
+        user_id = call.from_user.id
+        clear_user_state(user_id)
+        if user_id in checkout_data:
+            del checkout_data[user_id]
+        
+        bot.answer_callback_query(call.id, "Returning to products...")
+        
+        # Delete old order message if exists
+        old_message_id = get_order_message(user_id)
+        if old_message_id:
+            try:
+                bot.delete_message(call.message.chat.id, old_message_id)
+            except:
+                pass
+        
+        # Show categories in new message
+        from bot.handlers.commands import show_categories
+        show_categories(call.message, bot, config, user_id)
     
     @bot.message_handler(func=lambda m: get_user_state(m.from_user.id) == 'awaiting_name')
     def handle_name_input(message):
         user_id = message.from_user.id
         update_session_activity(user_id)
         
+        # Delete the user's message to keep chat tidy
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
+        
         name = message.text.strip()
-        
-        if len(name) < 2:
-            markup = types.InlineKeyboardMarkup()
-            markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_restart_checkout"))
-            bot.send_message(message.chat.id, "Please enter a valid name:", reply_markup=markup)
-            return
-        
         checkout_data[user_id]['name'] = name
         set_user_state(user_id, 'awaiting_address_line1')
         
+        checkout_msg_id = get_checkout_message(user_id)
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_name"))
         
-        bot.send_message(
-            message.chat.id,
-            "Perfect! Now for delivery details.\n\nPlease enter your address (street and number):",
-            reply_markup=markup
-        )
-    
+        try:
+            bot.edit_message_text(
+                "Enter house number + street name:",
+                message.chat.id,
+                checkout_msg_id,
+                reply_markup=markup
+            )
+        except:
+            sent_msg = bot.send_message(
+                message.chat.id,
+                "Enter house number + street name:",
+                reply_markup=markup
+            )
+            set_checkout_message(user_id, sent_msg.message_id)
     
     @bot.message_handler(func=lambda m: get_user_state(m.from_user.id) == 'awaiting_address_line1')
     def handle_address_line1_input(message):
         user_id = message.from_user.id
         update_session_activity(user_id)
         
+        # Delete the user's message to keep chat tidy
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
+        
         address = message.text.strip()
-        
-        if len(address) < 5:
-            markup = types.InlineKeyboardMarkup()
-            markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_name"))
-            bot.send_message(message.chat.id, "Please enter a valid address:", reply_markup=markup)
-            return
-        
         checkout_data[user_id]['address_line1'] = address
         set_user_state(user_id, 'awaiting_city')
         
+        checkout_msg_id = get_checkout_message(user_id)
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_address"))
         
-        bot.send_message(message.chat.id, "Enter your city:", reply_markup=markup)
-    
+        try:
+            bot.edit_message_text(
+                "Enter your city:",
+                message.chat.id,
+                checkout_msg_id,
+                reply_markup=markup
+            )
+        except:
+            sent_msg = bot.send_message(message.chat.id, "Enter your city:", reply_markup=markup)
+            set_checkout_message(user_id, sent_msg.message_id)
     
     @bot.message_handler(func=lambda m: get_user_state(m.from_user.id) == 'awaiting_city')
     def handle_city_input(message):
         user_id = message.from_user.id
         update_session_activity(user_id)
         
+        # Delete the user's message to keep chat tidy
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
+        
         city = message.text.strip()
-        
-        if len(city) < 2:
-            markup = types.InlineKeyboardMarkup()
-            markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_address"))
-            bot.send_message(message.chat.id, "Please enter a valid city:", reply_markup=markup)
-            return
-        
         checkout_data[user_id]['city'] = city
         set_user_state(user_id, 'awaiting_postcode')
         
+        checkout_msg_id = get_checkout_message(user_id)
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_city"))
         
-        bot.send_message(message.chat.id, "Finally, enter your postcode:", reply_markup=markup)
+        try:
+            bot.edit_message_text(
+                "Postcode:",
+                message.chat.id,
+                checkout_msg_id,
+                reply_markup=markup
+            )
+        except:
+            sent_msg = bot.send_message(message.chat.id, "Postcode:", reply_markup=markup)
+            set_checkout_message(user_id, sent_msg.message_id)
     
     @bot.message_handler(func=lambda m: get_user_state(m.from_user.id) == 'awaiting_postcode')
     def handle_postcode_input(message):
         user_id = message.from_user.id
         update_session_activity(user_id)
         
+        # Delete the user's message to keep chat tidy
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
+        
         postcode = message.text.strip()
-        
-        if len(postcode) < 3:
-            markup = types.InlineKeyboardMarkup()
-            markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_city"))
-            bot.send_message(message.chat.id, "Please enter a valid postcode:", reply_markup=markup)
-            return
-        
         checkout_data[user_id]['postcode'] = postcode.upper()
         
         # Clear state
@@ -141,39 +194,51 @@ def register_checkout_handlers(bot, config):
             types.InlineKeyboardButton("✏️ Edit Address", callback_data="edit_address")
         )
         markup.row(
-            types.InlineKeyboardButton("✅ Confirm & Pay", callback_data="confirm_order")
+            types.InlineKeyboardButton("🏁 Confirm & Pay", callback_data="confirm_order")
         )
         
-        bot.send_message(
-            message.chat.id,
-            summary,
-            reply_markup=markup
-        )
-    
-    @bot.callback_query_handler(func=lambda call: call.data == 'back_restart_checkout')
-    def handle_back_restart(call):
-        user_id = call.from_user.id
-        clear_user_state(user_id)
-        if user_id in checkout_data:
-            del checkout_data[user_id]
-        bot.answer_callback_query(call.id, "Checkout cancelled")
-        bot.send_message(call.message.chat.id, "Checkout cancelled. Use /cart to try again.")
+        checkout_msg_id = get_checkout_message(user_id)
+        try:
+            bot.edit_message_text(
+                summary,
+                message.chat.id,
+                checkout_msg_id,
+                reply_markup=markup
+            )
+        except:
+            bot.send_message(
+                message.chat.id,
+                summary,
+                reply_markup=markup
+            )
     
     @bot.callback_query_handler(func=lambda call: call.data == 'back_to_name')
     def handle_back_to_name(call):
         user_id = call.from_user.id
         set_user_state(user_id, 'awaiting_name')
-        bot.send_message(call.message.chat.id, "Please enter a name for delivery:")
+        
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton("📦 Continue Shopping", callback_data="continue_shopping"))
+        
+        bot.edit_message_text(
+            "Enter a name for delivery:",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup
+        )
     
     @bot.callback_query_handler(func=lambda call: call.data == 'back_to_address')
     def handle_back_to_address(call):
         user_id = call.from_user.id
         set_user_state(user_id, 'awaiting_address_line1')
+        
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_name"))
-        bot.send_message(
-            call.message.chat.id, 
-            "Please enter your address (street and number):",
+        
+        bot.edit_message_text(
+            "Enter house number + street name:",
+            call.message.chat.id,
+            call.message.message_id,
             reply_markup=markup
         )
     
@@ -181,27 +246,30 @@ def register_checkout_handlers(bot, config):
     def handle_back_to_city(call):
         user_id = call.from_user.id
         set_user_state(user_id, 'awaiting_city')
+        
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_address"))
-        bot.send_message(call.message.chat.id, "Enter your city:", reply_markup=markup)
+        
+        bot.edit_message_text(
+            "Enter your city:",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup
+        )
     
     @bot.callback_query_handler(func=lambda call: call.data == 'edit_address')
     def handle_edit_address(call):
         user_id = call.from_user.id
-        # Clear address fields and restart
-        if user_id in checkout_data:
-            checkout_data[user_id].pop('address_line1', None)
-            checkout_data[user_id].pop('city', None)
-            checkout_data[user_id].pop('postcode', None)
         
-        set_user_state(user_id, 'awaiting_address_line1')
+        set_user_state(user_id, 'awaiting_name')
         
         markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton("⬅️ Back", callback_data="back_to_name"))
+        markup.row(types.InlineKeyboardButton("📦 Continue Shopping", callback_data="continue_shopping"))
         
-        bot.send_message(
+        bot.edit_message_text(
+            "Enter a name for delivery:",
             call.message.chat.id,
-            "Let's update your delivery address.\n\nPlease enter your address (street and number):",
+            call.message.message_id,
             reply_markup=markup
         )
     
@@ -237,7 +305,6 @@ def register_checkout_handlers(bot, config):
                 cancel_url
             )
             
-            # Send payment link
             markup = types.InlineKeyboardMarkup()
             markup.row(
                 types.InlineKeyboardButton(
@@ -248,7 +315,7 @@ def register_checkout_handlers(bot, config):
             
             bot.send_message(
                 call.message.chat.id,
-                f"✅ Order Created!\n\nOrder ID: {order_data['order_id']}\n\nClick below to complete payment:",
+                f"🏁 Order Created\n\nOrder ID: {order_data['order_id']}\n\nClick below to complete payment:",
                 reply_markup=markup
             )
             
@@ -262,6 +329,6 @@ def register_checkout_handlers(bot, config):
         except Exception as e:
             bot.send_message(
                 call.message.chat.id,
-                f"Sorry, there was an error creating your payment session. Please try again or contact support.\n\nError: {str(e)}"
+                f"There was an error creating your payment session. Try again or contact us directly."
             )
             print(f"Stripe error: {e}")

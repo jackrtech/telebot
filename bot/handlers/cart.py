@@ -55,7 +55,7 @@ def register_cart_handlers(bot, config):
         
         bot.answer_callback_query(
             call.id,
-            f"Added {product_name} to cart! ({cart_count} items total)"
+            f"Added {product_name} to cart ({cart_count} items total)"
         )
         
         # Check if live cart message exists
@@ -66,10 +66,10 @@ def register_cart_handlers(bot, config):
         
         markup = types.InlineKeyboardMarkup()
         markup.row(
-            types.InlineKeyboardButton("🗑️ Clear Cart", callback_data="clear_cart")
+            types.InlineKeyboardButton("🪓 Clear Cart", callback_data="clear_cart")
         )
         markup.row(
-            types.InlineKeyboardButton("✅ Checkout", callback_data="checkout")
+            types.InlineKeyboardButton("🏁 Checkout", callback_data="checkout")
         )
         
         if cart_message_id:
@@ -120,7 +120,7 @@ def register_cart_handlers(bot, config):
         
         clear_cart(user_id)
         
-        bot.answer_callback_query(call.id, "Cart cleared!")
+        bot.answer_callback_query(call.id, "Cart cleared")
         
         # Update the cart message to show empty cart
         bot.edit_message_text(

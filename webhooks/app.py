@@ -14,15 +14,15 @@ def create_flask_app(bot, config):
     # Health check endpoint
     @app.route('/')
     def health_check():
-        return "Bot is running!", 200
+        return "Bot is running", 200
     
     @app.route('/success')
     def payment_success():
         return """
         <html>
             <body style="font-family: Arial; text-align: center; padding: 50px;">
-                <h1>✅ Payment Successful!</h1>
-                <p>Thank you for your order. You will receive a confirmation email shortly.</p>
+                <h1>Payment Successful</h1>
+                <p>You will receive a confirmation email shortly.</p>
                 <p>You can close this window and return to Telegram.</p>
             </body>
         </html>

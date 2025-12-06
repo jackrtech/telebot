@@ -42,7 +42,7 @@ def main():
     )
     flask_thread.start()
     
-    print(f"Bot started successfully!")
+    print(f"Bot started successfully")
     print(f"Flask webhook server running on {config.flask_host}:{config.flask_port}")
     
     # Start polling

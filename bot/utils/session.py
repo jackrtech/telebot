@@ -9,6 +9,8 @@ user_sessions = {}
 user_carts = {}
 user_states = {}
 user_cart_messages = {}
+user_order_messages = {}
+user_checkout_messages = {}
 
 SESSION_TIMEOUT = 900  # 15 minutes in seconds
 
@@ -39,6 +41,10 @@ def clear_user_session(user_id):
     # Clear the stored cart message ID
     if user_id in user_cart_messages:
         del user_cart_messages[user_id]
+    if user_id in user_order_messages:
+        del user_order_messages[user_id]
+    if user_id in user_checkout_messages:
+        del user_checkout_messages[user_id]
 
 def is_session_expired(user_id):
     """Check if a user's session has expired"""
@@ -87,3 +93,19 @@ def clear_cart_message(user_id):
     """Clear the stored cart message ID"""
     if user_id in user_cart_messages:
         del user_cart_messages[user_id]
+
+def set_order_message(user_id, message_id):
+    """Store the message ID of the user's order message"""
+    user_order_messages[user_id] = message_id
+
+def get_order_message(user_id):
+    """Get the message ID of the user's order message"""
+    return user_order_messages.get(user_id, None)
+
+def set_checkout_message(user_id, message_id):
+    """Store the message ID of the user's checkout message"""
+    user_checkout_messages[user_id] = message_id
+
+def get_checkout_message(user_id):
+    """Get the message ID of the user's checkout message"""
+    return user_checkout_messages.get(user_id, None)

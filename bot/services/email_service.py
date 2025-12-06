@@ -45,7 +45,7 @@ def send_payment_confirmation(order_data, config):
         return False
     
     subject = f"Payment Confirmed - Order {order_data['order_id']}"
-    text_body = f"Thank you for your order!\n\n{format_order_summary(order_data, config.currency)}\n\nWe'll process your order shortly."
+    text_body = f"Welcome to the Postmen 📨\n\n{format_order_summary(order_data, config.currency)}\n\nWe'll process your order shortly."
     
     try:
         response = requests.post(

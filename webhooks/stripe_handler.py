@@ -46,7 +46,7 @@ def handle_successful_payment(session, bot, config):
         # Send confirmation message to user
         bot.send_message(
             user_id,
-            f"✅ Payment confirmed!\n\nYour order {order_id} has been received and will be processed shortly.\n\nThank you for your purchase! 🎉"
+            f"Payment confirmed\n\nYour order {order_id} has been received and will be processed shortly"
         )
         
         # Note: We would update the order status in the CSV here
