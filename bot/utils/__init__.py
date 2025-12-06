@@ -1,3 +1,3 @@
 """
-Utility functions for the bot
+Webhook handlers package
 """

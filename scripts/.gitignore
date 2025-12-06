@@ -23,11 +23,9 @@ wheels/
 .installed.cfg
 *.egg
 
-# Environment variables
+# Environment
 .env
-
-# Orders data
-orders.csv
+.env.local
 
 # IDE
 .vscode/
@@ -39,3 +37,7 @@ orders.csv
 # OS
 .DS_Store
 Thumbs.db
+
+# Project specific
+orders.csv
+*.log

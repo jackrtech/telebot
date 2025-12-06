@@ -1,3 +1,3 @@
 """
-Business logic services
+Utility functions for the bot
 """

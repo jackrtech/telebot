@@ -1,3 +1,3 @@
 """
-Webhook handlers package
+Business logic services
 """
