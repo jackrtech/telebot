@@ -1,0 +1,24 @@
+{
+  "shop_name": "Postmen Store",
+  "currency": "GBP",
+  "products": {
+    "MULTIPACKS": {
+      "10 Pack": "5.00",
+      "20 Pack": "10.00",
+      "30 Pack": "15.00",
+      "40 Pack": "20.00"
+    },
+    "Individual": {
+      "No. 1": "3.00",
+      "No. 2": "3.00",
+      "No. 3": "3.00",
+      "No. 4": "3.00"
+    },
+    "Extras": {
+      "🍕 Pizza": "12.99",
+      "🍔 Burger": "9.99",
+      "🌮 Taco": "7.99",
+      "🍜 Ramen": "11.99"
+    }
+  }
+}

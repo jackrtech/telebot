@@ -1,0 +1,34 @@
+# Environment variables
+.env
+token.txt
+stripe.txt
+email.txt
+mailgun.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Logs
+*.log
+bot.log
+
+# Data files (obsolete)
+orders.csv
+order_counter.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
