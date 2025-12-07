@@ -18,6 +18,10 @@ def main():
     # Load configuration
     config = Config()
     
+    print(f"[DEBUG] Token loaded: {config.telegram_token[:20]}..." if config.telegram_token else "[DEBUG] Token is None or empty!")
+    print(f"[DEBUG] Token length: {len(config.telegram_token) if config.telegram_token else 0}")
+    print(f"[DEBUG] Has colon: {':' in config.telegram_token if config.telegram_token else False}")
+    
     # Initialize bot
     bot = telebot.TeleBot(config.telegram_token, threaded=False)
     
