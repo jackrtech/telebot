@@ -12,27 +12,36 @@ def register_stripe_webhook(app, bot, config):
     
     @app.route('/webhook', methods=['POST'])
     def stripe_webhook():
+        print(f"[v0] Webhook received at /webhook endpoint")
         payload = request.get_data()
         sig_header = request.headers.get('Stripe-Signature')
+        print(f"[v0] Signature header present: {sig_header is not None}")
         
         try:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, config.stripe_webhook_secret
             )
-        except ValueError:
+            print(f"[v0] Webhook event verified: {event['type']}")
+        except ValueError as e:
+            print(f"[v0] Invalid payload: {e}")
             return 'Invalid payload', 400
-        except stripe.error.SignatureVerificationError:
+        except stripe.error.SignatureVerificationError as e:
+            print(f"[v0] Invalid signature: {e}")
             return 'Invalid signature', 400
         
         # Handle the event
         if event['type'] == 'checkout.session.completed':
+            print(f"[v0] Processing checkout.session.completed event")
             session = event['data']['object']
             handle_successful_payment(session, bot, config)
+        else:
+            print(f"[v0] Unhandled event type: {event['type']}")
         
         return 'Success', 200
 
 def handle_successful_payment(session, bot, config):
     """Handle successful payment event"""
+    print(f"[v0] handle_successful_payment called")
     metadata = session.get('metadata', {})
     order_id = metadata.get('order_id')
     user_id = metadata.get('user_id')
@@ -44,8 +53,10 @@ def handle_successful_payment(session, bot, config):
     items_json = metadata.get('items')
     total = metadata.get('total')
     
+    print(f"[v0] Metadata: order_id={order_id}, user_id={user_id}, username={username}")
+    
     if not order_id or not user_id:
-        print("Missing order_id or user_id in webhook metadata")
+        print("[v0] ERROR: Missing order_id or user_id in webhook metadata")
         return
     
     try:
@@ -65,12 +76,17 @@ def handle_successful_payment(session, bot, config):
             'currency': config.currency
         }
         
+        print(f"[v0] Sending receipt to Telegram user {user_id}")
         receipt_text = format_receipt(order_data, config.currency)
         bot.send_message(user_id, receipt_text)
+        print(f"[v0] Receipt sent to Telegram")
         
+        print(f"[v0] Sending email notification")
         send_payment_confirmation_email(order_data, config)
         
-        print(f"Payment confirmed for order {order_id}")
+        print(f"[v0] Payment confirmed for order {order_id}")
         
     except Exception as e:
-        print(f"Error handling payment confirmation: {e}")
+        print(f"[v0] ERROR handling payment confirmation: {e}")
+        import traceback
+        traceback.print_exc()

@@ -8,12 +8,20 @@ def send_payment_confirmation_email(order_data, config):
     """Send payment confirmation email to shop owner after successful payment"""
     from bot.utils.formatting import format_receipt
     
+    print(f"[v0] send_payment_confirmation_email called")
+    print(f"[v0] Mailgun API key present: {bool(config.mailgun_api_key)}")
+    print(f"[v0] Mailgun domain: {config.mailgun_domain}")
+    
     if not config.mailgun_api_key or not config.mailgun_domain:
-        print("Mailgun not configured, skipping email")
+        print("[v0] ERROR: Mailgun not configured, skipping email")
         return False
     
     subject = f"New Order Payment Confirmed - {order_data['order_id']}"
     text_body = format_receipt(order_data, config.currency)
+    
+    print(f"[v0] Sending email to: {config.mailgun_to}")
+    print(f"[v0] From: {config.mailgun_from}")
+    print(f"[v0] Subject: {subject}")
     
     try:
         response = requests.post(
@@ -27,13 +35,17 @@ def send_payment_confirmation_email(order_data, config):
             }
         )
         
+        print(f"[v0] Mailgun API response: {response.status_code}")
+        
         if response.status_code == 200:
-            print(f"Payment confirmation email sent for {order_data['order_id']}")
+            print(f"[v0] SUCCESS: Payment confirmation email sent for {order_data['order_id']}")
             return True
         else:
-            print(f"Failed to send email: {response.status_code} - {response.text}")
+            print(f"[v0] ERROR: Failed to send email: {response.status_code} - {response.text}")
             return False
             
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"[v0] ERROR sending email: {e}")
+        import traceback
+        traceback.print_exc()
         return False
