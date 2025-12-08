@@ -32,8 +32,7 @@ class Config:
         self.flask_host = os.getenv('FLASK_HOST', '0.0.0.0')
         self.flask_port = int(os.getenv('FLASK_PORT', 5000))
         
-        # Ngrok URL for local testing
-        self.ngrok_url = os.getenv('NGROK_URL', '')
+        self.public_url = os.getenv('PUBLIC_URL', '')
     
     def get_categories(self):
         """Get list of product categories"""

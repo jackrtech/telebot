@@ -293,8 +293,8 @@ def register_checkout_handlers(bot, config):
         
         # Create Stripe payment session
         try:
-            success_url = f"{config.ngrok_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
-            cancel_url = f"{config.ngrok_url}/cancel"
+            success_url = f"{config.public_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
+            cancel_url = f"{config.public_url}/cancel"
             
             session = create_payment_session(
                 order_data,
