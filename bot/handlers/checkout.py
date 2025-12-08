@@ -10,7 +10,6 @@ from bot.utils.session import (
 from bot.services.cart_service import get_cart, clear_cart, get_cart_total
 from bot.services.order_service import create_order
 from bot.services.payment_service import create_payment_session
-from bot.services.email_service import send_order_notification
 from bot.utils.formatting import format_cart_message, format_order_summary_individual
 
 # Temporary storage for customer info during checkout
