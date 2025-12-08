@@ -159,8 +159,7 @@ def register_checkout_handlers(bot, config):
                 reply_markup=markup
             )
         except:
-            sent_msg = bot.send_message(message.chat.id, "Postcode:", reply_markup=markup)
-            set_checkout_message(user_id, sent_msg.message_id)
+            bot.send_message(message.chat.id, "Postcode:", reply_markup=markup)
     
     @bot.message_handler(func=lambda m: get_user_state(m.from_user.id) == 'awaiting_postcode')
     def handle_postcode_input(message):
@@ -278,6 +277,9 @@ def register_checkout_handlers(bot, config):
         user_id = call.from_user.id
         update_session_activity(user_id)
         
+        username = call.from_user.username or "Unknown"
+        checkout_data[user_id]['username'] = username
+        
         # Create order
         cart = get_cart(user_id)
         products_flat = config.get_all_products_flat()
@@ -289,9 +291,6 @@ def register_checkout_handlers(bot, config):
             products_flat,
             config.currency
         )
-        
-        # Send notification email
-        send_order_notification(order_data, config)
         
         # Create Stripe payment session
         try:
@@ -322,9 +321,6 @@ def register_checkout_handlers(bot, config):
             # Clear cart after successful order creation
             clear_cart(user_id)
             
-            # Clean up checkout data
-            if user_id in checkout_data:
-                del checkout_data[user_id]
                 
         except Exception as e:
             bot.send_message(

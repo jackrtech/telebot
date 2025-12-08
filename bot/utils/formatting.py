@@ -1,6 +1,10 @@
 """
 Text and message formatting utilities
 """
+from datetime import datetime
+import pytz
+
+UK_TZ = pytz.timezone('Europe/London')
 
 def format_price(price, currency='GBP'):
     """Format price with currency symbol, removing unnecessary decimals"""
@@ -107,5 +111,58 @@ def format_order_summary(order_data, currency='GBP'):
         lines.append(f"• {item} - {format_price(price, currency)}")
     
     lines.append(f"\nTotal: {format_price(total, currency)}")
+    
+    return "\n".join(lines)
+
+def format_receipt(order_data, currency='GBP'):
+    """Format receipt for customer after payment confirmation (no emojis)"""
+    now = datetime.now(UK_TZ)
+    date_str = now.strftime('%d %b %Y, %H:%M')
+    
+    username = order_data.get('username', 'Unknown')
+    if username != 'Unknown' and not username.startswith('@'):
+        username = f"@{username}"
+    
+    lines = [
+        "Payment Confirmed",
+        "",
+        f"Order Reference: {order_data['order_id']}",
+        f"Date: {date_str}",
+        f"Customer: {username}",
+        "",
+        "Items Ordered:"
+    ]
+    
+    # Parse items - could be dict or string
+    items_with_prices = []
+    total = 0.0
+    
+    if isinstance(order_data['items'], dict):
+        for item, details in order_data['items'].items():
+            quantity = details['quantity']
+            price = details['price']
+            for _ in range(quantity):
+                items_with_prices.append((item, price))
+            total += quantity * price
+    else:
+        # Fallback if items is a string
+        total = order_data.get('total', 0.0)
+    
+    # Sort by price ascending
+    items_with_prices.sort(key=lambda x: x[1])
+    
+    for item, price in items_with_prices:
+        lines.append(f"{item} - {format_price(price, currency)}")
+    
+    lines.extend([
+        "",
+        f"Total Paid: {format_price(total, currency)}",
+        "",
+        "Delivery Address:",
+        order_data['name'],
+        order_data['address_line1'],
+        order_data['city'],
+        order_data['postcode']
+    ])
     
     return "\n".join(lines)

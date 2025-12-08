@@ -2,6 +2,7 @@
 Stripe payment integration service
 """
 import stripe
+import json
 
 def create_payment_session(order_data, stripe_secret_key, success_url, cancel_url):
     """Create a Stripe checkout session for an order"""
@@ -21,7 +22,6 @@ def create_payment_session(order_data, stripe_secret_key, success_url, cancel_ur
             'quantity': details['quantity'],
         })
     
-    # Create checkout session
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=line_items,
@@ -31,7 +31,13 @@ def create_payment_session(order_data, stripe_secret_key, success_url, cancel_ur
         metadata={
             'order_id': order_data['order_id'],
             'user_id': str(order_data['user_id']),
-            'customer_email': order_data['email']
+            'username': order_data.get('username', 'Unknown'),
+            'customer_name': order_data['name'],
+            'address_line1': order_data['address_line1'],
+            'city': order_data['city'],
+            'postcode': order_data['postcode'],
+            'items': json.dumps(order_data['items']),
+            'total': str(order_data['total'])
         }
     )
     

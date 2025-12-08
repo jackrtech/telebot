@@ -3,7 +3,9 @@ Stripe webhook event handler
 """
 from flask import request
 import stripe
-from bot.services.email_service import send_payment_confirmation
+import json
+from bot.services.email_service import send_payment_confirmation_email
+from bot.utils.formatting import format_receipt
 
 def register_stripe_webhook(app, bot, config):
     """Register Stripe webhook endpoint"""
@@ -34,7 +36,13 @@ def handle_successful_payment(session, bot, config):
     metadata = session.get('metadata', {})
     order_id = metadata.get('order_id')
     user_id = metadata.get('user_id')
-    customer_email = metadata.get('customer_email')
+    username = metadata.get('username', 'Unknown')
+    customer_name = metadata.get('customer_name')
+    address_line1 = metadata.get('address_line1')
+    city = metadata.get('city')
+    postcode = metadata.get('postcode')
+    items_json = metadata.get('items')
+    total = metadata.get('total')
     
     if not order_id or not user_id:
         print("Missing order_id or user_id in webhook metadata")
@@ -43,14 +51,25 @@ def handle_successful_payment(session, bot, config):
     try:
         user_id = int(user_id)
         
-        # Send confirmation message to user
-        bot.send_message(
-            user_id,
-            f"Payment confirmed\n\nYour order {order_id} has been received and will be processed shortly"
-        )
+        items_dict = json.loads(items_json) if items_json else {}
         
-        # Note: We would update the order status in the CSV here
-        # For now, just log it
+        order_data = {
+            'order_id': order_id,
+            'username': username,
+            'name': customer_name,
+            'address_line1': address_line1,
+            'city': city,
+            'postcode': postcode,
+            'items': items_dict,
+            'total': float(total),
+            'currency': config.currency
+        }
+        
+        receipt_text = format_receipt(order_data, config.currency)
+        bot.send_message(user_id, receipt_text)
+        
+        send_payment_confirmation_email(order_data, config)
+        
         print(f"Payment confirmed for order {order_id}")
         
     except Exception as e:
